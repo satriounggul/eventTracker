@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Event Progress Tracker (GUI)",
+            "request": "launch",
+            "mainClass": "eventtracker.Main",
+            "projectName": "EventProgressTracker",
+            "vmArgs": "-ea"
+        },
+        {
+            "type": "java",
+            "name": "Console Test (Tanpa GUI)",
+            "request": "launch",
+            "mainClass": "eventtracker.ConsoleTest",
+            "projectName": "EventProgressTracker",
+            "vmArgs": "-ea"
+        }
+    ]
+}
