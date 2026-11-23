@@ -7,6 +7,7 @@ public class DivisionHead extends Member {
         super(name, position, divisionName);
     }
 
+    @Override
     public boolean canEdit(String divisionName) {
         if (divisionName == null) {
             return false;
@@ -14,10 +15,12 @@ public class DivisionHead extends Member {
         return divisionName.equalsIgnoreCase(getDivisionName());
     }
 
+    @Override
     public boolean canManageEvent() {
         return false;
     }
 
+    @Override
     public String getRoleLabel() {
         return "Ketua Divisi";
     }

@@ -1,18 +1,20 @@
 package eventtracker.model;
 
-import java.time.LocalDate;
 import eventtracker.exception.DataNotFoundException;
 import eventtracker.exception.InvalidDataException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Event implements Progressable {
     private String name;
     private LocalDate date;
-    private Division[] divisions;
-    private int divisionCount;
-    private Member[] members;
-    private int memberCount;
-    private Meeting[] meetings;
-    private int meetingCount;
+    private List<Division> divisions;
+    private List<Member> members;
+    private List<Meeting> meetings;
 
     public Event(String name, LocalDate date) throws InvalidDataException {
         if (name == null || name.trim().isEmpty()) {
@@ -23,12 +25,9 @@ public class Event implements Progressable {
         }
         this.name = name.trim();
         this.date = date;
-        this.divisions = new Division[10];
-        this.divisionCount = 0;
-        this.members = new Member[10];
-        this.memberCount = 0;
-        this.meetings = new Meeting[10];
-        this.meetingCount = 0;
+        this.divisions = new ArrayList<>();
+        this.members = new ArrayList<>();
+        this.meetings = new ArrayList<>();
     }
 
     public String getName() {
@@ -57,61 +56,43 @@ public class Event implements Progressable {
         if (d == null) {
             throw new InvalidDataException("Divisi tidak boleh null.");
         }
-        for (int i = 0; i < divisionCount; i++) {
-            if (divisions[i].getName().equalsIgnoreCase(d.getName())) {
+        for (Division existing : divisions) {
+            if (existing.getName().equalsIgnoreCase(d.getName())) {
                 throw new InvalidDataException("Divisi dengan nama \"" + d.getName() + "\" sudah ada.");
             }
         }
-        if (divisionCount == divisions.length) {
-            Division[] newDivisions = new Division[divisions.length * 2];
-            for (int i = 0; i < divisions.length; i++) {
-                newDivisions[i] = divisions[i];
-            }
-            divisions = newDivisions;
-        }
-        divisions[divisionCount++] = d;
+        divisions.add(d);
     }
 
     public void removeDivision(Division d) throws DataNotFoundException {
-        int index = -1;
-        for (int i = 0; i < divisionCount; i++) {
-            if (divisions[i] == d) {
-                index = i;
-                break;
-            }
-        }
-        if (index == -1) {
+        boolean removed = divisions.remove(d);
+        if (!removed) {
             throw new DataNotFoundException("Divisi tidak ditemukan.");
         }
         // Kosongkan divisi pada anggota yang berada di divisi ini
-        for (int i = 0; i < memberCount; i++) {
-            if (members[i].getDivisionName().equalsIgnoreCase(d.getName())) {
-                members[i].setDivisionName("");
+        for (Member m : members) {
+            if (m.getDivisionName().equalsIgnoreCase(d.getName())) {
+                m.setDivisionName("");
             }
         }
-        for (int i = index; i < divisionCount - 1; i++) {
-            divisions[i] = divisions[i + 1];
-        }
-        divisionCount--;
-        divisions[divisionCount] = null;
     }
 
     public Division getDivision(int i) {
-        if (i < 0 || i >= divisionCount) {
+        if (i < 0 || i >= divisions.size()) {
             throw new IndexOutOfBoundsException("Indeks divisi di luar rentang.");
         }
-        return divisions[i];
+        return divisions.get(i);
     }
 
     public int getDivisionCount() {
-        return divisionCount;
+        return divisions.size();
     }
 
     public Division findDivision(String name) throws DataNotFoundException {
         if (name != null) {
-            for (int i = 0; i < divisionCount; i++) {
-                if (divisions[i].getName().equalsIgnoreCase(name.trim())) {
-                    return divisions[i];
+            for (Division d : divisions) {
+                if (d.getName().equalsIgnoreCase(name.trim())) {
+                    return d;
                 }
             }
         }
@@ -122,182 +103,176 @@ public class Event implements Progressable {
         if (m == null) {
             return;
         }
-        if (memberCount == members.length) {
-            Member[] newMembers = new Member[members.length * 2];
-            for (int i = 0; i < members.length; i++) {
-                newMembers[i] = members[i];
-            }
-            members = newMembers;
-        }
-        members[memberCount++] = m;
+        members.add(m);
     }
 
     public void removeMember(Member m) throws DataNotFoundException {
-        int index = -1;
-        for (int i = 0; i < memberCount; i++) {
-            if (members[i] == m) {
-                index = i;
-                break;
-            }
-        }
-        if (index == -1) {
+        boolean removed = members.remove(m);
+        if (!removed) {
             throw new DataNotFoundException("Anggota tidak ditemukan.");
         }
-        for (int i = index; i < memberCount - 1; i++) {
-            members[i] = members[i + 1];
-        }
-        memberCount--;
-        members[memberCount] = null;
     }
 
     public Member getMember(int i) {
-        if (i < 0 || i >= memberCount) {
+        if (i < 0 || i >= members.size()) {
             throw new IndexOutOfBoundsException("Indeks anggota di luar rentang.");
         }
-        return members[i];
+        return members.get(i);
     }
 
     public int getMemberCount() {
-        return memberCount;
+        return members.size();
     }
 
     public void addMeeting(Meeting m) {
         if (m == null) {
             return;
         }
-        if (meetingCount == meetings.length) {
-            Meeting[] newMeetings = new Meeting[meetings.length * 2];
-            for (int i = 0; i < meetings.length; i++) {
-                newMeetings[i] = meetings[i];
-            }
-            meetings = newMeetings;
-        }
-        meetings[meetingCount++] = m;
+        meetings.add(m);
     }
 
     public void removeMeeting(Meeting m) throws DataNotFoundException {
-        int index = -1;
-        for (int i = 0; i < meetingCount; i++) {
-            if (meetings[i] == m) {
-                index = i;
-                break;
-            }
-        }
-        if (index == -1) {
+        boolean removed = meetings.remove(m);
+        if (!removed) {
             throw new DataNotFoundException("Notulensi rapat tidak ditemukan.");
         }
-        for (int i = index; i < meetingCount - 1; i++) {
-            meetings[i] = meetings[i + 1];
-        }
-        meetingCount--;
-        meetings[meetingCount] = null;
     }
 
     public Meeting getMeeting(int i) {
-        if (i < 0 || i >= meetingCount) {
+        if (i < 0 || i >= meetings.size()) {
             throw new IndexOutOfBoundsException("Indeks notulensi di luar rentang.");
         }
-        return meetings[i];
+        return meetings.get(i);
     }
 
     public int getMeetingCount() {
-        return meetingCount;
+        return meetings.size();
     }
 
     public int getTotalTasks() {
         int total = 0;
-        for (int i = 0; i < divisionCount; i++) {
-            total += divisions[i].getTaskCount();
+        for (Division d : divisions) {
+            total += d.getTaskCount();
         }
         return total;
     }
 
     public int getTotalDone() {
         int done = 0;
-        for (int i = 0; i < divisionCount; i++) {
-            done += divisions[i].countDone();
+        for (Division d : divisions) {
+            done += d.countDone();
         }
         return done;
     }
 
     public int getTotalLate() {
         int late = 0;
-        for (int i = 0; i < divisionCount; i++) {
-            late += divisions[i].countLate();
+        for (Division d : divisions) {
+            late += d.countLate();
         }
         return late;
     }
 
+    @Override
     public int getProgress() {
         int total = getTotalTasks();
         if (total == 0) {
             return 0;
         }
-        int progress = getTotalDone() * 100 / total;
-        assert progress >= 0 && progress <= 100 : "Progres event harus antara 0 dan 100";
-        return progress;
+        return getTotalDone() * 100 / total;
     }
 
-    public Task[] getLateTasks() {
-        int lateCount = getTotalLate();
-        Task[] lateTasks = new Task[lateCount];
-        int idx = 0;
-        for (int i = 0; i < divisionCount; i++) {
-            Division div = divisions[i];
+    // Memanfaatkan Collections.max() untuk progres divisi tertinggi
+    public int getHighestDivisionProgress() {
+        if (divisions.isEmpty()) {
+            return 0;
+        }
+        List<Integer> progressList = new ArrayList<>();
+        for (Division d : divisions) {
+            progressList.add(d.getProgress());
+        }
+        return Collections.max(progressList);
+    }
+
+    // Memanfaatkan Collections.min() untuk progres divisi terendah
+    public int getLowestDivisionProgress() {
+        if (divisions.isEmpty()) {
+            return 0;
+        }
+        List<Integer> progressList = new ArrayList<>();
+        for (Division d : divisions) {
+            progressList.add(d.getProgress());
+        }
+        return Collections.min(progressList);
+    }
+
+    // Memanfaatkan HashMap untuk ringkasan jumlah tugas per status
+    public Map<String, Integer> getStatusSummary() {
+        Map<String, Integer> summary = new HashMap<>();
+        summary.put("Belum", 0);
+        summary.put("Proses", 0);
+        summary.put("Selesai", 0);
+        summary.put("Terlambat", 0);
+
+        for (Division div : divisions) {
+            for (int j = 0; j < div.getTaskCount(); j++) {
+                Task t = div.getTask(j);
+                String label = t.getStatusLabel();
+                summary.put(label, summary.get(label) + 1);
+            }
+        }
+        return summary;
+    }
+
+    public List<Task> getLateTasks() {
+        List<Task> lateTasks = new ArrayList<>();
+        for (Division div : divisions) {
             for (int j = 0; j < div.getTaskCount(); j++) {
                 Task t = div.getTask(j);
                 if (t.isLate()) {
-                    lateTasks[idx++] = t;
+                    lateTasks.add(t);
                 }
             }
         }
         return lateTasks;
     }
 
-    public Task[] getUpcomingTasks(int limit) {
+    // Method Overloading: default 5 tugas terdekat
+    public List<Task> getUpcomingTasks() {
+        return getUpcomingTasks(5);
+    }
+
+    public List<Task> getUpcomingTasks(int limit) {
+        List<Task> result = new ArrayList<>();
         if (limit <= 0) {
-            return new Task[0];
+            return result;
         }
         LocalDate today = LocalDate.now();
-        // Hitung tugas yang belum selesai dan belum lewat
-        int count = 0;
-        for (int i = 0; i < divisionCount; i++) {
-            Division div = divisions[i];
+        List<Task> upcoming = new ArrayList<>();
+        for (Division div : divisions) {
             for (int j = 0; j < div.getTaskCount(); j++) {
                 Task t = div.getTask(j);
                 if (t.getStatus() != Status.SELESAI && !t.getDeadline().isBefore(today)) {
-                    count++;
+                    upcoming.add(t);
                 }
             }
         }
 
-        Task[] upcoming = new Task[count];
-        int idx = 0;
-        for (int i = 0; i < divisionCount; i++) {
-            Division div = divisions[i];
-            for (int j = 0; j < div.getTaskCount(); j++) {
-                Task t = div.getTask(j);
-                if (t.getStatus() != Status.SELESAI && !t.getDeadline().isBefore(today)) {
-                    upcoming[idx++] = t;
-                }
-            }
-        }
-
-        // Urutkan dengan bubble sort berdasarkan deadline terdekat
+        // Urutkan berdasarkan deadline terdekat
+        int count = upcoming.size();
         for (int i = 0; i < count - 1; i++) {
             for (int j = 0; j < count - 1 - i; j++) {
-                if (upcoming[j].getDeadline().isAfter(upcoming[j + 1].getDeadline())) {
-                    Task temp = upcoming[j];
-                    upcoming[j] = upcoming[j + 1];
-                    upcoming[j + 1] = temp;
+                if (upcoming.get(j).getDeadline().isAfter(upcoming.get(j + 1).getDeadline())) {
+                    Task temp = upcoming.get(j);
+                    upcoming.set(j, upcoming.get(j + 1));
+                    upcoming.set(j + 1, temp);
                 }
             }
         }
 
         int resultSize = (count < limit) ? count : limit;
-        Task[] result = new Task[resultSize];
         for (int i = 0; i < resultSize; i++) {
-            result[i] = upcoming[i];
+            result.add(upcoming.get(i));
         }
         return result;
     }

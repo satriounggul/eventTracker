@@ -1,21 +1,21 @@
 package eventtracker.io;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import eventtracker.model.Division;
 import eventtracker.model.Event;
 import eventtracker.model.Meeting;
 import eventtracker.model.Task;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 public class ReportExporter {
 
-    public static void exportTxt(Event e, File f) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8));
+    public static synchronized void exportTxt(Event e, File f) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(f));
         try {
             writer.write("LAPORAN PROGRES EVENT");
             writer.newLine();
@@ -27,6 +27,18 @@ public class ReportExporter {
             writer.newLine();
             writer.write("Progres total: " + e.getProgress() + "% (" + e.getTotalDone() + " dari " + e.getTotalTasks() + " tugas selesai, " + e.getTotalLate() + " terlambat)");
             writer.newLine();
+            writer.write("Progres divisi: Tertinggi " + e.getHighestDivisionProgress() + "%, Terendah " + e.getLowestDivisionProgress() + "%");
+            writer.newLine();
+            writer.newLine();
+
+            // Ringkasan Status (Map)
+            writer.write("RINGKASAN STATUS TUGAS");
+            writer.newLine();
+            Map<String, Integer> statusSummary = e.getStatusSummary();
+            for (Map.Entry<String, Integer> entry : statusSummary.entrySet()) {
+                writer.write("  " + entry.getKey() + " : " + entry.getValue() + " tugas");
+                writer.newLine();
+            }
             writer.newLine();
 
             // Divisi dan tugas
@@ -52,13 +64,13 @@ public class ReportExporter {
             // Tugas terlambat
             writer.write("TUGAS TERLAMBAT");
             writer.newLine();
-            Task[] lateTasks = e.getLateTasks();
-            if (lateTasks.length == 0) {
+            List<Task> lateTasks = e.getLateTasks();
+            if (lateTasks.isEmpty()) {
                 writer.write("  Tidak ada tugas terlambat.");
                 writer.newLine();
             } else {
-                for (int i = 0; i < lateTasks.length; i++) {
-                    Task t = lateTasks[i];
+                for (int i = 0; i < lateTasks.size(); i++) {
+                    Task t = lateTasks.get(i);
                     writer.write("  " + (i + 1) + ". " + t.getTitle() + " (Divisi " + t.getDivisionName() + ") - PIC: " + t.getPicText() + " - Deadline: " + TextUtil.formatDate(t.getDeadline()));
                     writer.newLine();
                 }
@@ -87,8 +99,8 @@ public class ReportExporter {
         }
     }
 
-    public static void exportCsv(Event e, File f) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8));
+    public static synchronized void exportCsv(Event e, File f) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(f));
         try {
             // Header
             writer.write("Divisi;Judul;PIC;Prioritas;Deadline;Status;QC;Catatan;Link");

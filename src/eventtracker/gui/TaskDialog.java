@@ -1,17 +1,20 @@
 package eventtracker.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.time.LocalDate;
+import java.util.Set;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -59,122 +62,89 @@ public class TaskDialog extends JDialog {
     private void initComponents(String defaultDivision) {
         setLayout(new BorderLayout(10, 10));
 
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 8, 4, 8);
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        int row = 0;
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 12, 6, 12));
 
         // 1. Judul
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Judul Tugas:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         titleField = new JTextField(25);
-        formPanel.add(titleField, gbc);
-        row++;
+        formPanel.add(createRow("Judul Tugas:", titleField));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // 2. Divisi
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Divisi:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         String[] divNames = new String[event.getDivisionCount()];
         for (int i = 0; i < event.getDivisionCount(); i++) {
             divNames[i] = event.getDivision(i).getName();
         }
-        divisionCombo = new JComboBox<String>(divNames);
+        divisionCombo = new JComboBox<>(divNames);
         if (defaultDivision != null && !defaultDivision.isEmpty()) {
             divisionCombo.setSelectedItem(defaultDivision);
         }
-        formPanel.add(divisionCombo, gbc);
-        row++;
+        formPanel.add(createRow("Divisi:", divisionCombo));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // 3. Deskripsi
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Deskripsi:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         descArea = new JTextArea(3, 25);
         descArea.setLineWrap(true);
         descArea.setWrapStyleWord(true);
-        formPanel.add(new JScrollPane(descArea), gbc);
-        row++;
+        formPanel.add(createRow("Deskripsi:", new JScrollPane(descArea)));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // 4. PIC
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("PIC (pisahkan koma):"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         picField = new JTextField(25);
-        formPanel.add(picField, gbc);
-        row++;
+        formPanel.add(createRow("PIC (pisahkan koma):", picField));
+        formPanel.add(Box.createVerticalStrut(4));
 
         // 5. Opsi Semua Anggota
-        gbc.gridx = 1; gbc.gridy = row;
         allPicsCheckBox = new JCheckBox("Semua anggota divisi");
         allPicsCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 picField.setEnabled(!allPicsCheckBox.isSelected());
             }
         });
-        formPanel.add(allPicsCheckBox, gbc);
-        row++;
+        formPanel.add(createRow("", allPicsCheckBox));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // 6. Prioritas
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Prioritas:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
-        priorityCombo = new JComboBox<String>(new String[] {
+        priorityCombo = new JComboBox<>(new String[] {
             Priority.RENDAH.getLabel(),
             Priority.SEDANG.getLabel(),
             Priority.TINGGI.getLabel()
         });
         priorityCombo.setSelectedIndex(1); // Default SEDANG
-        formPanel.add(priorityCombo, gbc);
-        row++;
+        formPanel.add(createRow("Prioritas:", priorityCombo));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // 7. Deadline
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Deadline (dd-MM-yyyy):"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         deadlineField = new JTextField(TextUtil.formatDate(LocalDate.now().plusDays(7)), 15);
-        formPanel.add(deadlineField, gbc);
-        row++;
+        formPanel.add(createRow("Deadline (dd-MM-yyyy):", deadlineField));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // 8. Status
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Status:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
-        statusCombo = new JComboBox<String>(new String[] {
+        statusCombo = new JComboBox<>(new String[] {
             Status.BELUM.getLabel(),
             Status.PROSES.getLabel(),
             Status.SELESAI.getLabel()
         });
-        formPanel.add(statusCombo, gbc);
-        row++;
+        formPanel.add(createRow("Status:", statusCombo));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // 9. Catatan
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Catatan:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         notesArea = new JTextArea(2, 25);
         notesArea.setLineWrap(true);
         notesArea.setWrapStyleWord(true);
-        formPanel.add(new JScrollPane(notesArea), gbc);
-        row++;
+        formPanel.add(createRow("Catatan:", new JScrollPane(notesArea)));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // 10. Link Hasil
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Link Hasil:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         linkField = new JTextField(25);
-        formPanel.add(linkField, gbc);
-        row++;
+        formPanel.add(createRow("Link Hasil:", linkField));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // 11. QC Checkbox
-        gbc.gridx = 1; gbc.gridy = row;
         qcCheckBox = new JCheckBox("Quality Control (QC)");
-        formPanel.add(qcCheckBox, gbc);
-        row++;
+        formPanel.add(createRow("", qcCheckBox));
 
         // Jika mode edit, isi nilai yang sudah ada
         if (taskToEdit != null) {
@@ -212,12 +182,14 @@ public class TaskDialog extends JDialog {
         JButton cancelButton = new JButton("Batal");
 
         saveButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onSave();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
                 dispose();
@@ -229,6 +201,15 @@ public class TaskDialog extends JDialog {
 
         add(formPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private JPanel createRow(String labelText, JComponent field) {
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        JLabel label = new JLabel(labelText);
+        label.setPreferredSize(new Dimension(150, 24));
+        row.add(label, BorderLayout.WEST);
+        row.add(field, BorderLayout.CENTER);
+        return row;
     }
 
     private void onSave() {
@@ -245,8 +226,8 @@ public class TaskDialog extends JDialog {
         }
 
         boolean allPics = allPicsCheckBox.isSelected();
-        String[] pics = TextUtil.splitPics(picField.getText());
-        if (!allPics && pics.length == 0) {
+        Set<String> pics = TextUtil.splitPicsToSet(picField.getText());
+        if (!allPics && pics.isEmpty()) {
             JOptionPane.showMessageDialog(this, "PIC tidak boleh kosong jika opsi Semua tidak dicentang.", "Validasi", JOptionPane.WARNING_MESSAGE);
             return;
         }

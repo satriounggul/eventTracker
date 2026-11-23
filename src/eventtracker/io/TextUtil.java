@@ -1,9 +1,13 @@
 package eventtracker.io;
 
+import eventtracker.exception.InvalidDataException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import eventtracker.exception.InvalidDataException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class TextUtil {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
@@ -26,58 +30,84 @@ public class TextUtil {
         return text.replace("\\n", "\n");
     }
 
-    public static String joinPics(String[] pics) {
-        if (pics == null || pics.length == 0) {
+    public static String joinPics(Set<String> pics) {
+        if (pics == null || pics.isEmpty()) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < pics.length; i++) {
-            if (i > 0) {
+        boolean first = true;
+        for (String p : pics) {
+            if (!first) {
                 sb.append(";");
             }
-            sb.append(pics[i]);
+            sb.append(p);
+            first = false;
         }
         return sb.toString();
     }
 
-    public static String joinPicsWithComma(String[] pics) {
-        if (pics == null || pics.length == 0) {
+    public static String joinPicsWithComma(Set<String> pics) {
+        if (pics == null || pics.isEmpty()) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < pics.length; i++) {
-            if (i > 0) {
+        boolean first = true;
+        for (String p : pics) {
+            if (!first) {
                 sb.append(", ");
             }
-            sb.append(pics[i]);
+            sb.append(p);
+            first = false;
         }
         return sb.toString();
     }
 
-    public static String[] splitPics(String text) {
+    public static Set<String> splitPicsToSet(String text) {
+        Set<String> result = new TreeSet<>();
+        List<String> list = splitPics(text);
+        for (String item : list) {
+            result.add(item);
+        }
+        return result;
+    }
+
+    public static List<String> splitPics(String text) {
+        List<String> result = new ArrayList<>();
         if (text == null || text.trim().isEmpty()) {
-            return new String[0];
+            return result;
         }
         // Pisahkan berdasarkan titik koma atau koma
         String delimiter = text.contains(";") ? ";" : ",";
         String[] raw = text.split(delimiter, -1);
 
-        int validCount = 0;
-        for (int i = 0; i < raw.length; i++) {
-            if (!raw[i].trim().isEmpty()) {
-                validCount++;
-            }
-        }
-
-        String[] result = new String[validCount];
-        int idx = 0;
         for (int i = 0; i < raw.length; i++) {
             String trimmed = raw[i].trim();
             if (!trimmed.isEmpty()) {
-                result[idx++] = trimmed;
+                result.add(trimmed);
             }
         }
         return result;
+    }
+
+    // Membersihkan karakter tidak aman untuk nama file menggunakan StringBuilder & charAt
+    public static String sanitizeFileName(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return "event";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            boolean valid = (c >= 'a' && c <= 'z')
+                    || (c >= 'A' && c <= 'Z')
+                    || (c >= '0' && c <= '9')
+                    || c == '.' || c == '-';
+            if (valid) {
+                sb.append(c);
+            } else {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
     }
 
     public static LocalDate parseDate(String text) throws InvalidDataException {

@@ -1,7 +1,9 @@
 package eventtracker.model;
 
-import java.time.LocalDate;
 import eventtracker.exception.InvalidDataException;
+import java.time.LocalDate;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class Task implements Progressable {
     private String title;
@@ -9,7 +11,7 @@ public class Task implements Progressable {
     private String divisionName;
     private String notes;
     private String resultLink;
-    private String[] pics;
+    private Set<String> pics;
     private boolean allPics;
     private boolean qualityChecked;
     private Priority priority;
@@ -28,12 +30,17 @@ public class Task implements Progressable {
         this.priority = (priority != null) ? priority : Priority.SEDANG;
         this.deadline = deadline;
         this.status = Status.BELUM;
-        this.pics = new String[0];
+        this.pics = new TreeSet<>();
         this.allPics = false;
         this.qualityChecked = false;
         this.description = "";
         this.notes = "";
         this.resultLink = "";
+    }
+
+    // Overloaded constructor (default prioritas SEDANG)
+    public Task(String title, String divisionName, LocalDate deadline) throws InvalidDataException {
+        this(title, divisionName, Priority.SEDANG, deadline);
     }
 
     public String getTitle() {
@@ -63,26 +70,32 @@ public class Task implements Progressable {
         this.divisionName = (divisionName != null) ? divisionName.trim() : "";
     }
 
-    public String[] getPics() {
-        if (pics == null) {
-            return new String[0];
-        }
-        String[] copy = new String[pics.length];
-        for (int i = 0; i < pics.length; i++) {
-            copy[i] = pics[i];
-        }
-        return copy;
+    public Set<String> getPics() {
+        return new TreeSet<>(pics);
     }
 
-    public void setPics(String[] newPics) {
-        if (newPics == null) {
-            this.pics = new String[0];
-        } else {
-            this.pics = new String[newPics.length];
-            for (int i = 0; i < newPics.length; i++) {
-                this.pics[i] = newPics[i];
+    public void setPics(Set<String> newPics) {
+        this.pics = new TreeSet<>();
+        if (newPics != null) {
+            for (String p : newPics) {
+                if (p != null && !p.trim().isEmpty()) {
+                    this.pics.add(p.trim());
+                }
             }
         }
+    }
+
+    // Overloaded setter untuk menerima array String
+    public void setPics(String[] newPics) {
+        Set<String> picSet = new TreeSet<>();
+        if (newPics != null) {
+            for (int i = 0; i < newPics.length; i++) {
+                if (newPics[i] != null && !newPics[i].trim().isEmpty()) {
+                    picSet.add(newPics[i].trim());
+                }
+            }
+        }
+        this.pics = picSet;
     }
 
     public boolean isAllPics() {
@@ -164,19 +177,22 @@ public class Task implements Progressable {
         if (allPics) {
             return "Semua anggota divisi";
         }
-        if (pics == null || pics.length == 0) {
+        if (pics == null || pics.isEmpty()) {
             return "-";
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < pics.length; i++) {
-            if (i > 0) {
+        boolean first = true;
+        for (String pic : pics) {
+            if (!first) {
                 sb.append(", ");
             }
-            sb.append(pics[i]);
+            sb.append(pic);
+            first = false;
         }
         return sb.toString();
     }
 
+    @Override
     public int getProgress() {
         return (status == Status.SELESAI) ? 100 : 0;
     }

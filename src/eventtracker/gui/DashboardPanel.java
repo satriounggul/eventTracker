@@ -1,10 +1,14 @@
 package eventtracker.gui;
 
+import eventtracker.io.TextUtil;
+import eventtracker.model.Division;
+import eventtracker.model.Event;
+import eventtracker.model.Task;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-// import java.awt.FlowLayout;
 import java.awt.Font;
-// import java.awt.GridLayout;
+import java.util.List;
+import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -15,10 +19,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
-import eventtracker.io.TextUtil;
-import eventtracker.model.Division;
-import eventtracker.model.Event;
-import eventtracker.model.Task;
 
 public class DashboardPanel extends RefreshablePanel {
     private JProgressBar totalProgressBar;
@@ -73,6 +73,7 @@ public class DashboardPanel extends RefreshablePanel {
         String[] columns = new String[] { "Judul Tugas", "Divisi", "PIC", "Deadline" };
 
         lateTableModel = new DefaultTableModel(columns, 0) {
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -82,6 +83,7 @@ public class DashboardPanel extends RefreshablePanel {
         lateScrollPane.setBorder(BorderFactory.createTitledBorder("Tugas Terlambat"));
 
         upcomingTableModel = new DefaultTableModel(columns, 0) {
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -98,6 +100,7 @@ public class DashboardPanel extends RefreshablePanel {
         add(tablesSplitPane, BorderLayout.CENTER);
     }
 
+    @Override
     public void refresh() {
         Event event = frame.getEvent();
         if (event == null) {
@@ -112,15 +115,21 @@ public class DashboardPanel extends RefreshablePanel {
             return;
         }
 
-        // 1. Perbarui progres total
+        // 1. Perbarui progres total & ringkasan HashMap + Collections.max/min
         int totalTasks = event.getTotalTasks();
         int totalDone = event.getTotalDone();
-        int totalLate = event.getTotalLate();
         int progress = event.getProgress();
+        Map<String, Integer> statusMap = event.getStatusSummary();
 
         totalProgressBar.setValue(progress);
         totalProgressBar.setString(progress + "%");
-        totalSummaryLabel.setText(totalDone + " dari " + totalTasks + " tugas selesai (" + progress + "%), " + totalLate + " tugas terlambat");
+        totalSummaryLabel.setText(
+                totalDone + " dari " + totalTasks + " tugas selesai (" + progress + "%)"
+                + " | Belum: " + statusMap.get("Belum")
+                + ", Proses: " + statusMap.get("Proses")
+                + ", Terlambat: " + statusMap.get("Terlambat")
+                + " | Divisi Tertinggi: " + event.getHighestDivisionProgress() + "%"
+                + ", Terendah: " + event.getLowestDivisionProgress() + "%");
 
         // 2. Perbarui daftar divisi
         divisionListPanel.removeAll();
@@ -159,9 +168,8 @@ public class DashboardPanel extends RefreshablePanel {
 
         // 3. Perbarui tabel tugas terlambat
         lateTableModel.setRowCount(0);
-        Task[] lateTasks = event.getLateTasks();
-        for (int i = 0; i < lateTasks.length; i++) {
-            Task t = lateTasks[i];
+        List<Task> lateTasks = event.getLateTasks();
+        for (Task t : lateTasks) {
             Object[] row = new Object[] {
                 t.getTitle(),
                 t.getDivisionName(),
@@ -171,11 +179,10 @@ public class DashboardPanel extends RefreshablePanel {
             lateTableModel.addRow(row);
         }
 
-        // 4. Perbarui tabel 5 deadline terdekat
+        // 4. Perbarui tabel 5 deadline terdekat (menggunakan overloaded method)
         upcomingTableModel.setRowCount(0);
-        Task[] upcomingTasks = event.getUpcomingTasks(5);
-        for (int i = 0; i < upcomingTasks.length; i++) {
-            Task t = upcomingTasks[i];
+        List<Task> upcomingTasks = event.getUpcomingTasks();
+        for (Task t : upcomingTasks) {
             Object[] row = new Object[] {
                 t.getTitle(),
                 t.getDivisionName(),

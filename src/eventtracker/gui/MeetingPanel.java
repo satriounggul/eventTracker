@@ -1,17 +1,17 @@
 package eventtracker.gui;
 
 import java.awt.BorderLayout;
-//import java.awt.Dimension;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.time.LocalDate;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -27,6 +27,7 @@ import javax.swing.table.DefaultTableModel;
 import eventtracker.exception.DataNotFoundException;
 import eventtracker.exception.InvalidDataException;
 import eventtracker.io.TextUtil;
+import eventtracker.model.DivisionHead;
 import eventtracker.model.Event;
 import eventtracker.model.Meeting;
 import eventtracker.model.Member;
@@ -56,6 +57,7 @@ public class MeetingPanel extends RefreshablePanel {
         // 1. Tabel Notulensi Rapat
         String[] columns = new String[] { "No", "Tanggal", "Divisi", "Cuplikan Isi" };
         tableModel = new DefaultTableModel(columns, 0) {
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -68,6 +70,7 @@ public class MeetingPanel extends RefreshablePanel {
         meetingTable.getColumnModel().getColumn(3).setPreferredWidth(450);
 
         meetingTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 onTableRowSelected();
             }
@@ -76,51 +79,32 @@ public class MeetingPanel extends RefreshablePanel {
         JScrollPane tableScroll = new JScrollPane(meetingTable);
         tableScroll.setBorder(BorderFactory.createTitledBorder("Daftar Notulensi Rapat"));
 
-        // 2. Form Rapat di Bawah
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Detail / Tambah Notulensi"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 6, 4, 6);
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        // 2. Form Rapat di Bawah (BoxLayout + BorderLayout)
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Detail / Tambah Notulensi"),
+                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 
-        int row = 0;
-
-        // Tanggal
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Tanggal (dd-MM-yyyy):"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         dateField = new JTextField(TextUtil.formatDate(LocalDate.now()), 15);
-        formPanel.add(dateField, gbc);
-        row++;
+        divisionCombo = new JComboBox<>(new String[] { "Semua" });
 
-        // Divisi
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Divisi:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
-        divisionCombo = new JComboBox<String>(new String[] { "Semua" });
-        formPanel.add(divisionCombo, gbc);
-        row++;
-
-        // Isi Rapat
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Isi Rapat:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         contentArea = new JTextArea(3, 30);
         contentArea.setLineWrap(true);
         contentArea.setWrapStyleWord(true);
-        formPanel.add(new JScrollPane(contentArea), gbc);
-        row++;
 
-        // Keputusan
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Keputusan:"), gbc);
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
         decisionArea = new JTextArea(2, 30);
         decisionArea.setLineWrap(true);
         decisionArea.setWrapStyleWord(true);
-        formPanel.add(new JScrollPane(decisionArea), gbc);
-        row++;
+
+        formPanel.add(createRow("Tanggal (dd-MM-yyyy):", dateField));
+        formPanel.add(Box.createVerticalStrut(6));
+        formPanel.add(createRow("Divisi:", divisionCombo));
+        formPanel.add(Box.createVerticalStrut(6));
+        formPanel.add(createRow("Isi Rapat:", new JScrollPane(contentArea)));
+        formPanel.add(Box.createVerticalStrut(6));
+        formPanel.add(createRow("Keputusan:", new JScrollPane(decisionArea)));
+        formPanel.add(Box.createVerticalStrut(6));
 
         // Tombol Aksi Form
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
@@ -129,6 +113,7 @@ public class MeetingPanel extends RefreshablePanel {
         deleteButton = new JButton("Hapus Notulensi");
 
         clearButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 clearForm();
                 meetingTable.clearSelection();
@@ -136,12 +121,14 @@ public class MeetingPanel extends RefreshablePanel {
         });
 
         addButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onAddMeeting();
             }
         });
 
         deleteButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onDeleteMeeting();
             }
@@ -150,9 +137,7 @@ public class MeetingPanel extends RefreshablePanel {
         buttonPanel.add(clearButton);
         buttonPanel.add(addButton);
         buttonPanel.add(deleteButton);
-
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        formPanel.add(buttonPanel, gbc);
+        formPanel.add(buttonPanel);
 
         // Gabungkan tabel dan form
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tableScroll, formPanel);
@@ -161,6 +146,16 @@ public class MeetingPanel extends RefreshablePanel {
         add(splitPane, BorderLayout.CENTER);
     }
 
+    private JPanel createRow(String labelText, JComponent field) {
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        JLabel label = new JLabel(labelText);
+        label.setPreferredSize(new Dimension(150, 24));
+        row.add(label, BorderLayout.WEST);
+        row.add(field, BorderLayout.CENTER);
+        return row;
+    }
+
+    @Override
     public void refresh() {
         Event event = frame.getEvent();
 
@@ -236,7 +231,7 @@ public class MeetingPanel extends RefreshablePanel {
         // Pengguna tanpa login / koordinator bisa tambah
         if (user == null || user.canManageEvent()) {
             addButton.setEnabled(true);
-        } else if (user instanceof eventtracker.model.DivisionHead) {
+        } else if (user instanceof DivisionHead) {
             addButton.setEnabled(true);
         } else {
             // Staff
@@ -271,7 +266,6 @@ public class MeetingPanel extends RefreshablePanel {
 
         Member user = frame.getCurrentUser();
         if (user != null && !user.canManageEvent()) {
-            // Jika bukan koordinator, hanya boleh tambah notulensi untuk divisinya sendiri
             if (!divName.equalsIgnoreCase(user.getDivisionName())) {
                 frame.showError("Anda hanya dapat menambahkan notulensi untuk divisi Anda (" + user.getDivisionName() + ").");
                 return;
