@@ -2,12 +2,14 @@ package eventtracker.model;
 
 import eventtracker.exception.DataNotFoundException;
 import eventtracker.exception.InvalidDataException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Division implements Progressable {
     private String name;
     private String headName;
-    private Task[] tasks;
-    private int taskCount;
+    private List<Task> tasks;
 
     public Division(String name, String headName) throws InvalidDataException {
         if (name == null || name.trim().isEmpty()) {
@@ -15,8 +17,7 @@ public class Division implements Progressable {
         }
         this.name = name.trim();
         this.headName = (headName != null) ? headName.trim() : "";
-        this.tasks = new Task[10];
-        this.taskCount = 0;
+        this.tasks = new ArrayList<>();
     }
 
     public String getName() {
@@ -36,56 +37,59 @@ public class Division implements Progressable {
             throw new InvalidDataException("Nama divisi tidak boleh kosong.");
         }
         this.name = newName.trim();
-        for (int i = 0; i < taskCount; i++) {
-            tasks[i].setDivisionName(this.name);
+        for (Task t : tasks) {
+            t.setDivisionName(this.name);
         }
     }
 
     public void addTask(Task t) {
-        t.setDivisionName(this.name);
-        if (taskCount == tasks.length) {
-            Task[] newTasks = new Task[tasks.length * 2];
-            for (int i = 0; i < tasks.length; i++) {
-                newTasks[i] = tasks[i];
-            }
-            tasks = newTasks;
+        if (t == null) {
+            return;
         }
-        tasks[taskCount++] = t;
+        t.setDivisionName(this.name);
+        tasks.add(t);
+    }
+
+    // Method Overloading: tambah tugas langsung dari data utama
+    public void addTask(String title, Priority priority, LocalDate deadline) throws InvalidDataException {
+        Task t = new Task(title, this.name, priority, deadline);
+        addTask(t);
     }
 
     public void removeTask(Task t) throws DataNotFoundException {
-        int index = -1;
-        for (int i = 0; i < taskCount; i++) {
-            if (tasks[i] == t) {
-                index = i;
-                break;
-            }
-        }
-        if (index == -1) {
+        boolean removed = tasks.remove(t);
+        if (!removed) {
             throw new DataNotFoundException("Tugas tidak ditemukan di divisi " + name + ".");
         }
-        for (int i = index; i < taskCount - 1; i++) {
-            tasks[i] = tasks[i + 1];
+    }
+
+    // Method Overloading: hapus tugas berdasarkan indeks
+    public void removeTask(int index) throws DataNotFoundException {
+        if (index < 0 || index >= tasks.size()) {
+            throw new DataNotFoundException("Indeks tugas tidak ditemukan di divisi " + name + ".");
         }
-        taskCount--;
-        tasks[taskCount] = null;
+        tasks.remove(index);
     }
 
     public Task getTask(int index) {
-        if (index < 0 || index >= taskCount) {
+        if (index < 0 || index >= tasks.size()) {
             throw new IndexOutOfBoundsException("Indeks tugas di luar rentang.");
         }
-        return tasks[index];
+        return tasks.get(index);
+    }
+
+    public List<Task> getTasks() {
+        return new ArrayList<>(tasks);
     }
 
     public int getTaskCount() {
-        return taskCount;
+        return tasks.size();
     }
 
     public int countDone() {
         int done = 0;
-        for (int i = 0; i < taskCount; i++) {
-            if (tasks[i].getStatus() == Status.SELESAI) {
+        for (Task t : tasks) {
+            if (t.getStatus() == Status.SELESAI) {
                 done++;
             }
         }
@@ -94,20 +98,19 @@ public class Division implements Progressable {
 
     public int countLate() {
         int late = 0;
-        for (int i = 0; i < taskCount; i++) {
-            if (tasks[i].isLate()) {
+        for (Task t : tasks) {
+            if (t.isLate()) {
                 late++;
             }
         }
         return late;
     }
 
+    @Override
     public int getProgress() {
-        if (taskCount == 0) {
+        if (tasks.isEmpty()) {
             return 0;
         }
-        int progress = countDone() * 100 / taskCount;
-        assert progress >= 0 && progress <= 100 : "Progres divisi harus antara 0 dan 100";
-        return progress;
+        return countDone() * 100 / tasks.size();
     }
 }

@@ -1,15 +1,5 @@
 package eventtracker.io;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import eventtracker.exception.DataNotFoundException;
 import eventtracker.exception.InvalidDataException;
 import eventtracker.model.Division;
@@ -20,11 +10,19 @@ import eventtracker.model.Position;
 import eventtracker.model.Priority;
 import eventtracker.model.Status;
 import eventtracker.model.Task;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDate;
 
 public class FileManager {
 
-    public static void save(Event e, File f) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8));
+    public static synchronized void save(Event e, File f) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(f));
         try {
             // EVENT|nama|tanggal
             writer.write("EVENT|" + TextUtil.escape(e.getName()) + "|" + TextUtil.formatDate(e.getDate()));
@@ -80,8 +78,12 @@ public class FileManager {
         }
     }
 
-    public static Event load(File f) throws IOException, InvalidDataException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8));
+    public static synchronized Event load(File f) throws IOException, InvalidDataException {
+        if (!f.exists()) {
+            throw new FileNotFoundException("File tidak ditemukan: " + f.getName());
+        }
+
+        BufferedReader reader = new BufferedReader(new FileReader(f));
         Event event = null;
         int lineNumber = 0;
         try {
@@ -164,7 +166,7 @@ public class FileManager {
                         Division div = event.findDivision(divName);
                         Task task = new Task(title, div.getName(), priority, deadline);
                         task.setDescription(desc);
-                        task.setPics(TextUtil.splitPics(picsText));
+                        task.setPics(TextUtil.splitPicsToSet(picsText));
                         task.setAllPics(allPics);
                         task.setStatus(status);
                         task.setNotes(notes);

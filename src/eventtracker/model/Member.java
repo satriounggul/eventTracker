@@ -57,6 +57,7 @@ public abstract class Member {
         }
     }
 
+    @Override
     public String toString() {
         return name + " (" + position.getLabel() + ")";
     }

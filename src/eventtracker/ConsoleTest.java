@@ -1,7 +1,9 @@
 package eventtracker;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Map;
 import eventtracker.exception.InvalidDataException;
 import eventtracker.io.FileManager;
 import eventtracker.io.ReportExporter;
@@ -12,21 +14,16 @@ import eventtracker.model.Division;
 import eventtracker.model.DivisionHead;
 import eventtracker.model.Event;
 import eventtracker.model.Member;
-// import eventtracker.model.Position;
 import eventtracker.model.Priority;
 import eventtracker.model.Staff;
-// import eventtracker.model.Status;
 import eventtracker.model.Task;
 
 public class ConsoleTest {
     public static void main(String[] args) {
-        boolean assertsEnabled = false;
-        assert assertsEnabled = true; // side effect to check if -ea is enabled
         System.out.println("=== PENGUJIAN OTOMATIS EVENT PROGRESS TRACKER ===");
-        System.out.println("Assertion (-ea) aktif: " + assertsEnabled);
 
         try {
-            // 1. Uji Pembuatan Data Contoh
+            // 1. Uji Pembuatan Data Contoh (Class, Object, Collections)
             Event event = SampleData.create();
             if (event == null) {
                 throw new RuntimeException("Gagal membuat SampleData");
@@ -39,16 +36,18 @@ public class ConsoleTest {
             System.out.println("   Total Tugas Selesai: " + event.getTotalDone());
             System.out.println("   Total Tugas Terlambat: " + event.getTotalLate());
             System.out.println("   Progres Event: " + event.getProgress() + "%");
+            System.out.println("   Progres Divisi Tertinggi: " + event.getHighestDivisionProgress() + "%");
+            System.out.println("   Progres Divisi Terendah: " + event.getLowestDivisionProgress() + "%");
 
             if (event.getDivisionCount() != 5) throw new RuntimeException("Divisi harusnya 5");
             if (event.getMemberCount() != 14) throw new RuntimeException("Anggota harusnya 14");
             if (event.getTotalTasks() != 12) throw new RuntimeException("Tugas harusnya 12");
             if (event.getMeetingCount() != 2) throw new RuntimeException("Notulensi harusnya 2");
 
-            // 2. Uji Hak Akses (Polymorphism)
+            // 2. Uji Hak Akses (Run-time Polymorphism & Upcasting)
             Member coordinator = event.getMember(0);
             Member divHead = event.getMember(4); // Farhan Kusuma (Acara)
-            Member staff = event.getMember(9);    // Yoga Prasetyo (Acara)
+            Member staff = event.getMember(9);   // Yoga Prasetyo (Acara)
 
             if (!(coordinator instanceof Coordinator)) throw new RuntimeException("Koordinator salah class");
             if (!(divHead instanceof DivisionHead)) throw new RuntimeException("Ketua Divisi salah class");
@@ -64,10 +63,10 @@ public class ConsoleTest {
             if (staff.canManageEvent() || staff.canEdit("Acara")) throw new RuntimeException("Staff tidak boleh edit");
             System.out.println("2. Pengujian Hak Akses (Polymorphism) BERHASIL.");
 
-            // 3. Uji Simpan dan Muat File (.evt)
+            // 3. Uji Simpan dan Muat File (.evt) - Java I/O
             File testEvt = new File("test_event.evt");
             FileManager.save(event, testEvt);
-            System.out.println("3. File .evt berhasil disimpan.");
+            System.out.println("3. File .evt berhasil disimpan (" + testEvt.length() + " bytes).");
 
             Event loadedEvent = FileManager.load(testEvt);
             System.out.println("   File .evt berhasil dimuat.");
@@ -80,17 +79,54 @@ public class ConsoleTest {
             if (loadedEvent.getMeetingCount() != event.getMeetingCount()) throw new RuntimeException("Jumlah notulensi tidak sama!");
             System.out.println("   Integritas data tersimpan dan termuat kembali 100% COCOK.");
 
-            // 4. Uji Export Laporan TXT dan CSV
-            File testTxt = new File("test_laporan.txt");
-            ReportExporter.exportTxt(event, testTxt);
-            System.out.println("4. Export TXT berhasil.");
+            // 4. Uji Export Laporan TXT dan CSV dengan Multithreading (Runnable + join)
+            final File testTxt = new File("test_laporan.txt");
+            final File testCsv = new File("test_tugas.csv");
+            final Event eventRef = event;
 
-            File testCsv = new File("test_tugas.csv");
-            ReportExporter.exportCsv(event, testCsv);
-            System.out.println("   Export CSV berhasil.");
+            Thread txtThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ReportExporter.exportTxt(eventRef, testTxt);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            });
 
-            // 5. Uji Validasi & Exception
-            System.out.println("5. Uji Validasi:");
+            Thread csvThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ReportExporter.exportCsv(eventRef, testCsv);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            });
+
+            txtThread.start();
+            csvThread.start();
+            txtThread.join();
+            csvThread.join();
+
+            if (!testTxt.exists() || testTxt.length() == 0) throw new RuntimeException("Export TXT gagal");
+            if (!testCsv.exists() || testCsv.length() == 0) throw new RuntimeException("Export CSV gagal");
+            System.out.println("4. Export TXT (" + testTxt.length() + " bytes) & CSV (" + testCsv.length() + " bytes) via Thread BERHASIL.");
+
+            // 5. Uji Collections (Map, Set, Overloading)
+            Map<String, Integer> statusMap = event.getStatusSummary();
+            System.out.println("5. Ringkasan Status (HashMap): " + statusMap);
+            if (event.getUpcomingTasks().size() > 5) throw new RuntimeException("Default upcoming tasks harus maksimal 5");
+
+            Task dupPicTask = new Task("Uji PIC Unik", "Acara", LocalDate.now().plusDays(2));
+            dupPicTask.setPics(new String[] { "Budi", "Ani", "Budi" });
+            if (dupPicTask.getPics().size() != 2) throw new RuntimeException("Set PIC harus menghilangkan duplikat");
+            System.out.println("   Set PIC unik & terurut: " + dupPicTask.getPicText());
+
+            // 6. Uji Validasi & Exception
+            System.out.println("6. Uji Validasi:");
             try {
                 new Task("", "Acara", Priority.SEDANG, LocalDate.now());
                 throw new RuntimeException("Gagal mendeteksi judul kosong");

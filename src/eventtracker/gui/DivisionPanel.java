@@ -2,15 +2,12 @@ package eventtracker.gui;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-// import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -54,6 +51,7 @@ public class DivisionPanel extends RefreshablePanel {
 
         String[] divCols = new String[] { "No", "Nama Divisi", "Ketua Divisi", "Jumlah Tugas", "Progres" };
         divisionModel = new DefaultTableModel(divCols, 0) {
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -72,18 +70,21 @@ public class DivisionPanel extends RefreshablePanel {
         deleteDivButton = new JButton("Hapus Divisi");
 
         addDivButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onAddDivision();
             }
         });
 
         editDivButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onEditDivision();
             }
         });
 
         deleteDivButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onDeleteDivision();
             }
@@ -102,6 +103,7 @@ public class DivisionPanel extends RefreshablePanel {
 
         String[] memCols = new String[] { "No", "Nama", "Jabatan", "Divisi" };
         memberModel = new DefaultTableModel(memCols, 0) {
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -118,12 +120,14 @@ public class DivisionPanel extends RefreshablePanel {
         deleteMemberButton = new JButton("Hapus Anggota");
 
         addMemberButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onAddMember();
             }
         });
 
         deleteMemberButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onDeleteMember();
             }
@@ -142,6 +146,7 @@ public class DivisionPanel extends RefreshablePanel {
         add(splitPane, BorderLayout.CENTER);
     }
 
+    @Override
     public void refresh() {
         Event event = frame.getEvent();
 
@@ -194,20 +199,11 @@ public class DivisionPanel extends RefreshablePanel {
         JTextField nameField = new JTextField(15);
         JTextField headField = new JTextField(15);
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.anchor = GridBagConstraints.WEST;
-
-        gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Nama Divisi:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 0;
-        panel.add(nameField, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Ketua Divisi (opsional):"), gbc);
-        gbc.gridx = 1; gbc.gridy = 1;
-        panel.add(headField, gbc);
+        JPanel panel = new JPanel(new GridLayout(2, 2, 6, 6));
+        panel.add(new JLabel("Nama Divisi:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Ketua Divisi (opsional):"));
+        panel.add(headField);
 
         int result = JOptionPane.showConfirmDialog(frame, panel, "Tambah Divisi Baru", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
@@ -241,20 +237,11 @@ public class DivisionPanel extends RefreshablePanel {
         JTextField nameField = new JTextField(div.getName(), 15);
         JTextField headField = new JTextField(div.getHeadName(), 15);
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.anchor = GridBagConstraints.WEST;
-
-        gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Nama Divisi:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 0;
-        panel.add(nameField, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Ketua Divisi:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 1;
-        panel.add(headField, gbc);
+        JPanel panel = new JPanel(new GridLayout(2, 2, 6, 6));
+        panel.add(new JLabel("Nama Divisi:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Ketua Divisi:"));
+        panel.add(headField);
 
         int result = JOptionPane.showConfirmDialog(frame, panel, "Ubah Divisi", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
@@ -346,7 +333,7 @@ public class DivisionPanel extends RefreshablePanel {
         for (int i = 0; i < positions.length; i++) {
             posLabels[i] = positions[i].getLabel();
         }
-        JComboBox<String> posCombo = new JComboBox<String>(posLabels);
+        JComboBox<String> posCombo = new JComboBox<>(posLabels);
 
         // Pilihan divisi: "-" untuk umum / koordinator, dan daftar divisi
         String[] divChoices = new String[event.getDivisionCount() + 1];
@@ -354,10 +341,11 @@ public class DivisionPanel extends RefreshablePanel {
         for (int i = 0; i < event.getDivisionCount(); i++) {
             divChoices[i + 1] = event.getDivision(i).getName();
         }
-        JComboBox<String> divCombo = new JComboBox<String>(divChoices);
+        JComboBox<String> divCombo = new JComboBox<>(divChoices);
 
         // Jika jabatan koordinator dipilih, default divisi "-"
         posCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int idx = posCombo.getSelectedIndex();
                 if (idx >= 0 && idx <= 3) {
@@ -370,25 +358,13 @@ public class DivisionPanel extends RefreshablePanel {
         });
         posCombo.setSelectedIndex(5); // Default ANGGOTA
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.anchor = GridBagConstraints.WEST;
-
-        gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Nama Anggota:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 0;
-        panel.add(nameField, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Jabatan:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 1;
-        panel.add(posCombo, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Divisi:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 2;
-        panel.add(divCombo, gbc);
+        JPanel panel = new JPanel(new GridLayout(3, 2, 6, 6));
+        panel.add(new JLabel("Nama Anggota:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Jabatan:"));
+        panel.add(posCombo);
+        panel.add(new JLabel("Divisi:"));
+        panel.add(divCombo);
 
         int result = JOptionPane.showConfirmDialog(frame, panel, "Tambah Anggota", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {

@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -39,13 +41,11 @@ public class TaskPanel extends RefreshablePanel {
     private JButton deleteButton;
     private JButton markDoneButton;
 
-    private Task[] displayedTasks;
-    private int displayedCount;
+    private List<Task> displayedTasks;
 
     public TaskPanel(MainFrame frame) {
         super(frame);
-        displayedTasks = new Task[20];
-        displayedCount = 0;
+        displayedTasks = new ArrayList<>();
         initComponents();
     }
 
@@ -58,8 +58,9 @@ public class TaskPanel extends RefreshablePanel {
         filterPanel.setBorder(BorderFactory.createTitledBorder("Filter dan Pencarian"));
 
         filterPanel.add(new JLabel("Divisi:"));
-        divisionFilterCombo = new JComboBox<String>(new String[] { "Semua Divisi" });
+        divisionFilterCombo = new JComboBox<>(new String[] { "Semua Divisi" });
         divisionFilterCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 applyFilter();
             }
@@ -67,8 +68,9 @@ public class TaskPanel extends RefreshablePanel {
         filterPanel.add(divisionFilterCombo);
 
         filterPanel.add(new JLabel("Status:"));
-        statusFilterCombo = new JComboBox<String>(new String[] { "Semua Status", "Belum", "Proses", "Selesai", "Terlambat" });
+        statusFilterCombo = new JComboBox<>(new String[] { "Semua Status", "Belum", "Proses", "Selesai", "Terlambat" });
         statusFilterCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 applyFilter();
             }
@@ -78,6 +80,7 @@ public class TaskPanel extends RefreshablePanel {
         filterPanel.add(new JLabel("Cari:"));
         searchField = new JTextField(15);
         searchField.addKeyListener(new KeyAdapter() {
+            @Override
             public void keyReleased(KeyEvent e) {
                 applyFilter();
             }
@@ -86,6 +89,7 @@ public class TaskPanel extends RefreshablePanel {
 
         JButton clearFilterButton = new JButton("Reset");
         clearFilterButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 divisionFilterCombo.setSelectedIndex(0);
                 statusFilterCombo.setSelectedIndex(0);
@@ -100,6 +104,7 @@ public class TaskPanel extends RefreshablePanel {
             "No", "Judul", "Divisi", "PIC", "Prioritas", "Deadline", "Status", "QC"
         };
         tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -107,6 +112,7 @@ public class TaskPanel extends RefreshablePanel {
         taskTable = new JTable(tableModel);
         taskTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         taskTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 updateButtonStates();
             }
@@ -132,24 +138,28 @@ public class TaskPanel extends RefreshablePanel {
         markDoneButton = new JButton("Tandai Selesai");
 
         addButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onAdd();
             }
         });
 
         editButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onEdit();
             }
         });
 
         deleteButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onDelete();
             }
         });
 
         markDoneButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onMarkDone();
             }
@@ -165,6 +175,7 @@ public class TaskPanel extends RefreshablePanel {
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
+    @Override
     public void refresh() {
         Event event = frame.getEvent();
 
@@ -192,7 +203,7 @@ public class TaskPanel extends RefreshablePanel {
     private void applyFilter() {
         Event event = frame.getEvent();
         tableModel.setRowCount(0);
-        displayedCount = 0;
+        displayedTasks.clear();
 
         if (event == null) {
             updateButtonStates();
@@ -203,11 +214,10 @@ public class TaskPanel extends RefreshablePanel {
         String selectedStatus = (String) statusFilterCombo.getSelectedItem();
         String keyword = searchField.getText().trim().toLowerCase();
 
-        // Kumpulkan tugas yang cocok
+        // Kumpulkan tugas yang cocok ke ArrayList
         for (int i = 0; i < event.getDivisionCount(); i++) {
             Division div = event.getDivision(i);
 
-            // Filter divisi
             if (selectedDiv != null && !selectedDiv.equals("Semua Divisi") && !div.getName().equalsIgnoreCase(selectedDiv)) {
                 continue;
             }
@@ -215,7 +225,6 @@ public class TaskPanel extends RefreshablePanel {
             for (int j = 0; j < div.getTaskCount(); j++) {
                 Task t = div.getTask(j);
 
-                // Filter status
                 if (selectedStatus != null && !selectedStatus.equals("Semua Status")) {
                     if (selectedStatus.equals("Terlambat")) {
                         if (!t.isLate()) {
@@ -236,7 +245,6 @@ public class TaskPanel extends RefreshablePanel {
                     }
                 }
 
-                // Filter kata kunci pencarian (judul atau PIC)
                 if (!keyword.isEmpty()) {
                     boolean matchTitle = t.getTitle().toLowerCase().contains(keyword);
                     boolean matchPic = t.getPicText().toLowerCase().contains(keyword);
@@ -245,18 +253,10 @@ public class TaskPanel extends RefreshablePanel {
                     }
                 }
 
-                // Tambahkan ke array displayedTasks
-                if (displayedCount == displayedTasks.length) {
-                    Task[] newArr = new Task[displayedTasks.length * 2];
-                    for (int k = 0; k < displayedTasks.length; k++) {
-                        newArr[k] = displayedTasks[k];
-                    }
-                    displayedTasks = newArr;
-                }
-                displayedTasks[displayedCount++] = t;
+                displayedTasks.add(t);
 
                 Object[] row = new Object[] {
-                    displayedCount,
+                    displayedTasks.size(),
                     t.getTitle(),
                     t.getDivisionName(),
                     t.getPicText(),
@@ -274,8 +274,8 @@ public class TaskPanel extends RefreshablePanel {
 
     private Task getSelectedTask() {
         int selectedRow = taskTable.getSelectedRow();
-        if (selectedRow >= 0 && selectedRow < displayedCount) {
-            return displayedTasks[selectedRow];
+        if (selectedRow >= 0 && selectedRow < displayedTasks.size()) {
+            return displayedTasks.get(selectedRow);
         }
         return null;
     }
@@ -284,7 +284,6 @@ public class TaskPanel extends RefreshablePanel {
         Event event = frame.getEvent();
         Member user = frame.getCurrentUser();
 
-        // Tombol Tambah
         boolean canAddAny = false;
         if (event != null && event.getDivisionCount() > 0) {
             if (user == null || user.canManageEvent()) {
@@ -300,7 +299,6 @@ public class TaskPanel extends RefreshablePanel {
         }
         addButton.setEnabled(canAddAny);
 
-        // Tombol baris terpilih
         Task selected = getSelectedTask();
         if (selected == null) {
             editButton.setEnabled(false);

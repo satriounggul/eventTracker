@@ -7,14 +7,17 @@ public class Coordinator extends Member {
         super(name, position, divisionName);
     }
 
+    @Override
     public boolean canEdit(String divisionName) {
         return true;
     }
 
+    @Override
     public boolean canManageEvent() {
         return true;
     }
 
+    @Override
     public String getRoleLabel() {
         return "Koordinator";
     }

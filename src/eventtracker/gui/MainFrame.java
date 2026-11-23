@@ -4,9 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -14,6 +12,8 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -50,11 +50,15 @@ public class MainFrame extends JFrame {
     private JComboBox<String> userCombo;
     private boolean updatingUserCombo;
     private JLabel eventInfoLabel;
+    private JLabel statusBarLabel;
 
     private DashboardPanel dashboardPanel;
     private TaskPanel taskPanel;
     private DivisionPanel divisionPanel;
     private MeetingPanel meetingPanel;
+
+    private Thread monitorThread;
+    private boolean monitorRunning;
 
     public MainFrame() {
         super("Event Progress Tracker");
@@ -62,6 +66,7 @@ public class MainFrame extends JFrame {
         currentFile = null;
         currentUser = null;
         updatingUserCombo = false;
+        monitorRunning = true;
 
         try {
             currentEvent = new Event("Belum Ada Event", LocalDate.now());
@@ -71,6 +76,7 @@ public class MainFrame extends JFrame {
 
         initComponents();
         refreshAll();
+        startStatusMonitor();
     }
 
     private void initComponents() {
@@ -80,10 +86,10 @@ public class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 if (promptSaveIfDirty()) {
-                    dispose();
-                    System.exit(0);
+                    shutdownApp();
                 }
             }
         });
@@ -107,6 +113,80 @@ public class MainFrame extends JFrame {
         tabbedPane.addTab("Notulensi", meetingPanel);
 
         add(tabbedPane, BorderLayout.CENTER);
+
+        // 4. Status Bar (diperbarui secara berkala oleh background thread)
+        JPanel statusPanel = new JPanel(new BorderLayout());
+        statusPanel.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
+        statusBarLabel = new JLabel("Siap.");
+        statusBarLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        statusPanel.add(statusBarLabel, BorderLayout.WEST);
+        add(statusPanel, BorderLayout.SOUTH);
+    }
+
+    private void startStatusMonitor() {
+        monitorThread = new Thread(new StatusMonitor());
+        monitorThread.start();
+    }
+
+    private synchronized boolean isMonitorRunning() {
+        return monitorRunning;
+    }
+
+    private synchronized void stopMonitor() {
+        monitorRunning = false;
+    }
+
+    private void shutdownApp() {
+        stopMonitor();
+        if (monitorThread != null) {
+            monitorThread.interrupt();
+        }
+        dispose();
+        System.exit(0);
+    }
+
+    // Multithreading: Runnable untuk memantau status event & file di background
+    private class StatusMonitor implements Runnable {
+        @Override
+        public void run() {
+            while (isMonitorRunning()) {
+                final String statusText = buildStatusText();
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (statusBarLabel != null) {
+                            statusBarLabel.setText(statusText);
+                        }
+                    }
+                });
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+    }
+
+    private synchronized String buildStatusText() {
+        StringBuilder sb = new StringBuilder();
+        if (currentEvent != null) {
+            sb.append("Tugas: ").append(currentEvent.getTotalDone())
+              .append("/").append(currentEvent.getTotalTasks())
+              .append(" selesai | Terlambat: ").append(currentEvent.getTotalLate());
+        } else {
+            sb.append("Belum ada event aktif");
+        }
+        if (currentFile != null && currentFile.exists()) {
+            sb.append(" | File: ").append(currentFile.getName())
+              .append(" (").append(currentFile.length()).append(" bytes)");
+        } else {
+            sb.append(" | File belum disimpan");
+        }
+        if (dirty) {
+            sb.append(" [Perubahan belum disimpan]");
+        }
+        return sb.toString();
     }
 
     private void buildMenuBar() {
@@ -117,6 +197,7 @@ public class MainFrame extends JFrame {
 
         JMenuItem newEventItem = new JMenuItem("Event Baru");
         newEventItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onNewEvent();
             }
@@ -124,6 +205,7 @@ public class MainFrame extends JFrame {
 
         JMenuItem openEventItem = new JMenuItem("Buka Event...");
         openEventItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOpenEvent();
             }
@@ -131,6 +213,7 @@ public class MainFrame extends JFrame {
 
         JMenuItem saveItem = new JMenuItem("Simpan");
         saveItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onSave();
             }
@@ -138,6 +221,7 @@ public class MainFrame extends JFrame {
 
         JMenuItem saveAsItem = new JMenuItem("Simpan Sebagai...");
         saveAsItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onSaveAs();
             }
@@ -145,6 +229,7 @@ public class MainFrame extends JFrame {
 
         JMenuItem loadSampleItem = new JMenuItem("Muat Data Contoh");
         loadSampleItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onLoadSampleData();
             }
@@ -152,6 +237,7 @@ public class MainFrame extends JFrame {
 
         JMenuItem exportTxtItem = new JMenuItem("Export Laporan TXT...");
         exportTxtItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onExportTxt();
             }
@@ -159,6 +245,7 @@ public class MainFrame extends JFrame {
 
         JMenuItem exportCsvItem = new JMenuItem("Export Tugas CSV...");
         exportCsvItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onExportCsv();
             }
@@ -166,10 +253,10 @@ public class MainFrame extends JFrame {
 
         JMenuItem exitItem = new JMenuItem("Keluar");
         exitItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (promptSaveIfDirty()) {
-                    dispose();
-                    System.exit(0);
+                    shutdownApp();
                 }
             }
         });
@@ -192,13 +279,14 @@ public class MainFrame extends JFrame {
         String currentLafClass = UIManager.getLookAndFeel().getClass().getName();
 
         for (int i = 0; i < lafs.length; i++) {
-            UIManager.LookAndFeelInfo laf = lafs[i];
+            final UIManager.LookAndFeelInfo laf = lafs[i];
             JRadioButtonMenuItem lafItem = new JRadioButtonMenuItem(laf.getName());
             if (laf.getClassName().equals(currentLafClass)) {
                 lafItem.setSelected(true);
             }
             lafGroup.add(lafItem);
             lafItem.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     try {
                         UIManager.setLookAndFeel(laf.getClassName());
@@ -222,9 +310,10 @@ public class MainFrame extends JFrame {
         toolBar.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5));
 
         toolBar.add(new JLabel("Masuk sebagai:"));
-        userCombo = new JComboBox<String>();
+        userCombo = new JComboBox<>();
         userCombo.setPreferredSize(new Dimension(220, 26));
         userCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (updatingUserCombo) {
                     return;
@@ -285,15 +374,15 @@ public class MainFrame extends JFrame {
     }
 
     public void refreshAll() {
-        // Perbarui judul window
-        String title = "Event Progress Tracker";
+        // Perbarui judul window menggunakan StringBuilder
+        StringBuilder title = new StringBuilder("Event Progress Tracker");
         if (currentEvent != null) {
-            title += " - " + currentEvent.getName();
+            title.append(" - ").append(currentEvent.getName());
         }
         if (dirty) {
-            title += " *";
+            title.append(" *");
         }
-        setTitle(title);
+        setTitle(title.toString());
 
         // Perbarui label event di toolbar
         if (currentEvent != null) {
@@ -304,7 +393,6 @@ public class MainFrame extends JFrame {
 
         // Perbarui dropdown user
         updatingUserCombo = true;
-        // int previousSelectedIndex = userCombo.getSelectedIndex();
         userCombo.removeAllItems();
         userCombo.addItem("(Akses Penuh / Tamu)");
         if (currentEvent != null) {
@@ -348,6 +436,9 @@ public class MainFrame extends JFrame {
         if (meetingPanel != null) {
             meetingPanel.refresh();
         }
+        if (statusBarLabel != null) {
+            statusBarLabel.setText(buildStatusText());
+        }
     }
 
     public void showError(String message) {
@@ -387,25 +478,13 @@ public class MainFrame extends JFrame {
         JTextField dateField = new JTextField(TextUtil.formatDate(LocalDate.now().plusDays(30)), 12);
         JTextField divField = new JTextField(20);
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.anchor = GridBagConstraints.WEST;
-
-        gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Nama Event:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 0;
-        panel.add(nameField, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Tanggal Event (dd-MM-yyyy):"), gbc);
-        gbc.gridx = 1; gbc.gridy = 1;
-        panel.add(dateField, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Divisi Awal (pisahkan koma):"), gbc);
-        gbc.gridx = 1; gbc.gridy = 2;
-        panel.add(divField, gbc);
+        JPanel panel = new JPanel(new GridLayout(3, 2, 6, 6));
+        panel.add(new JLabel("Nama Event:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Tanggal Event (dd-MM-yyyy):"));
+        panel.add(dateField);
+        panel.add(new JLabel("Divisi Awal (pisahkan koma):"));
+        panel.add(divField);
 
         int result = JOptionPane.showConfirmDialog(this, panel, "Buat Event Baru", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
@@ -424,10 +503,10 @@ public class MainFrame extends JFrame {
 
             try {
                 Event newEvent = new Event(name, date);
-                String[] initDivs = TextUtil.splitPics(divField.getText());
-                for (int i = 0; i < initDivs.length; i++) {
-                    if (!initDivs[i].isEmpty()) {
-                        newEvent.addDivision(new Division(initDivs[i], ""));
+                List<String> initDivs = TextUtil.splitPics(divField.getText());
+                for (String divName : initDivs) {
+                    if (!divName.isEmpty()) {
+                        newEvent.addDivision(new Division(divName, ""));
                     }
                 }
                 currentEvent = newEvent;
@@ -460,7 +539,7 @@ public class MainFrame extends JFrame {
                 dirty = false;
                 currentUser = null;
                 refreshAll();
-                showInfo("Event berhasil dibuka dari: " + selectedFile.getName());
+                showInfo("Event berhasil dibuka dari: " + selectedFile.getName() + " (" + selectedFile.length() + " bytes)");
             } catch (InvalidDataException ex) {
                 showError(ex.getMessage());
             } catch (IOException ex) {
@@ -477,7 +556,7 @@ public class MainFrame extends JFrame {
             FileManager.save(currentEvent, currentFile);
             dirty = false;
             refreshAll();
-            showInfo("Data berhasil disimpan.");
+            showInfo("Data berhasil disimpan (" + currentFile.length() + " bytes).");
             return true;
         } catch (IOException ex) {
             showError("Gagal menyimpan file: " + ex.getMessage());
@@ -490,7 +569,7 @@ public class MainFrame extends JFrame {
         chooser.setDialogTitle("Simpan Event Sebagai");
         chooser.setFileFilter(new FileNameExtensionFilter("Event File (*.evt)", "evt"));
         if (currentEvent != null) {
-            String defaultFileName = currentEvent.getName().replaceAll("[^a-zA-Z0-9.-]", "_") + ".evt";
+            String defaultFileName = TextUtil.sanitizeFileName(currentEvent.getName()) + ".evt";
             chooser.setSelectedFile(new File(defaultFileName));
         }
 
@@ -505,7 +584,7 @@ public class MainFrame extends JFrame {
                 currentFile = selectedFile;
                 dirty = false;
                 refreshAll();
-                showInfo("Data berhasil disimpan ke: " + selectedFile.getName());
+                showInfo("Data berhasil disimpan ke: " + selectedFile.getName() + " (" + selectedFile.length() + " bytes)");
                 return true;
             } catch (IOException ex) {
                 showError("Gagal menyimpan file: " + ex.getMessage());
@@ -542,7 +621,7 @@ public class MainFrame extends JFrame {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Export Laporan TXT");
         chooser.setFileFilter(new FileNameExtensionFilter("Text File (*.txt)", "txt"));
-        String defaultFileName = "Laporan_" + currentEvent.getName().replaceAll("[^a-zA-Z0-9.-]", "_") + ".txt";
+        String defaultFileName = "Laporan_" + TextUtil.sanitizeFileName(currentEvent.getName()) + ".txt";
         chooser.setSelectedFile(new File(defaultFileName));
 
         int result = chooser.showSaveDialog(this);
@@ -551,12 +630,32 @@ public class MainFrame extends JFrame {
             if (!selectedFile.getName().toLowerCase().endsWith(".txt")) {
                 selectedFile = new File(selectedFile.getAbsolutePath() + ".txt");
             }
-            try {
-                ReportExporter.exportTxt(currentEvent, selectedFile);
-                showInfo("Laporan berhasil diexport ke: " + selectedFile.getName());
-            } catch (IOException ex) {
-                showError("Gagal menulis laporan: " + ex.getMessage());
-            }
+            final File targetFile = selectedFile;
+            final Event eventToExport = currentEvent;
+
+            // Jalankan export di background thread agar GUI tetap responsif
+            Thread exportThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ReportExporter.exportTxt(eventToExport, targetFile);
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                showInfo("Laporan berhasil diexport ke: " + targetFile.getName() + " (" + targetFile.length() + " bytes)");
+                            }
+                        });
+                    } catch (final IOException ex) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                showError("Gagal menulis laporan: " + ex.getMessage());
+                            }
+                        });
+                    }
+                }
+            });
+            exportThread.start();
         }
     }
 
@@ -569,7 +668,7 @@ public class MainFrame extends JFrame {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Export Tugas CSV");
         chooser.setFileFilter(new FileNameExtensionFilter("CSV File (*.csv)", "csv"));
-        String defaultFileName = "Tugas_" + currentEvent.getName().replaceAll("[^a-zA-Z0-9.-]", "_") + ".csv";
+        String defaultFileName = "Tugas_" + TextUtil.sanitizeFileName(currentEvent.getName()) + ".csv";
         chooser.setSelectedFile(new File(defaultFileName));
 
         int result = chooser.showSaveDialog(this);
@@ -578,12 +677,32 @@ public class MainFrame extends JFrame {
             if (!selectedFile.getName().toLowerCase().endsWith(".csv")) {
                 selectedFile = new File(selectedFile.getAbsolutePath() + ".csv");
             }
-            try {
-                ReportExporter.exportCsv(currentEvent, selectedFile);
-                showInfo("Daftar tugas berhasil diexport ke: " + selectedFile.getName());
-            } catch (IOException ex) {
-                showError("Gagal menulis CSV: " + ex.getMessage());
-            }
+            final File targetFile = selectedFile;
+            final Event eventToExport = currentEvent;
+
+            // Jalankan export di background thread agar GUI tetap responsif
+            Thread exportThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ReportExporter.exportCsv(eventToExport, targetFile);
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                showInfo("Daftar tugas berhasil diexport ke: " + targetFile.getName() + " (" + targetFile.length() + " bytes)");
+                            }
+                        });
+                    } catch (final IOException ex) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                showError("Gagal menulis CSV: " + ex.getMessage());
+                            }
+                        });
+                    }
+                }
+            });
+            exportThread.start();
         }
     }
 }
