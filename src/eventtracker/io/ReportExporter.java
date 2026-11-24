@@ -12,11 +12,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+// Pengekspor laporan progres event ke file teks (.txt) dan file tabel (.csv).
 public class ReportExporter {
 
+    // Method mengekspor laporan progres event ke file teks.
     public static synchronized void exportTxt(Event e, File f) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(f));
-        try {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(f))) {
             writer.write("LAPORAN PROGRES EVENT");
             writer.newLine();
             writer.write("Nama event   : " + e.getName());
@@ -25,9 +26,13 @@ public class ReportExporter {
             writer.newLine();
             writer.write("Dicetak      : " + TextUtil.formatDate(LocalDate.now()));
             writer.newLine();
-            writer.write("Progres total: " + e.getProgress() + "% (" + e.getTotalDone() + " dari " + e.getTotalTasks() + " tugas selesai, " + e.getTotalLate() + " terlambat)");
+            writer.write("Progres total: " + e.getProgress() + "% ("
+                    + e.getTotalDone() + " dari " 
+                    + e.getTotalTasks() + " tugas selesai, "
+                    + e.getTotalLate() + " terlambat)");
             writer.newLine();
-            writer.write("Progres divisi: Tertinggi " + e.getHighestDivisionProgress() + "%, Terendah " + e.getLowestDivisionProgress() + "%");
+            writer.write("Progres divisi: Tertinggi " + e.getHighestDivisionProgress()
+                    + "%, Terendah " + e.getLowestDivisionProgress() + "%");
             writer.newLine();
             writer.newLine();
 
@@ -44,9 +49,11 @@ public class ReportExporter {
             // Divisi dan tugas
             for (int i = 0; i < e.getDivisionCount(); i++) {
                 Division d = e.getDivision(i);
-                writer.write("DIVISI " + d.getName().toUpperCase() + " (Ketua: " + (d.getHeadName().isEmpty() ? "-" : d.getHeadName()) + ")");
+                writer.write("DIVISI " + d.getName().toUpperCase()
+                        + " (Ketua: " + (d.getHeadName().isEmpty() ? "-" : d.getHeadName()) + ")");
                 writer.newLine();
-                writer.write("Progres: " + d.getProgress() + "% (" + d.countDone() + " dari " + d.getTaskCount() + " tugas selesai)");
+                writer.write("Progres: " + d.getProgress() + "% ("
+                        + d.countDone() + " dari " + d.getTaskCount() + " tugas selesai)");
                 writer.newLine();
                 if (d.getTaskCount() == 0) {
                     writer.write("  (Belum ada tugas)");
@@ -54,7 +61,9 @@ public class ReportExporter {
                 } else {
                     for (int j = 0; j < d.getTaskCount(); j++) {
                         Task t = d.getTask(j);
-                        writer.write("  " + (j + 1) + ". [" + t.getStatusLabel() + "] " + t.getTitle() + " - PIC: " + t.getPicText() + " - Deadline: " + TextUtil.formatDate(t.getDeadline()));
+                        writer.write("  " + (j + 1) + ". [" + t.getStatusLabel() + "] " + t.getTitle()
+                                + " - PIC: " + t.getPicText()
+                                + " - Deadline: " + TextUtil.formatDate(t.getDeadline()));
                         writer.newLine();
                     }
                 }
@@ -71,7 +80,9 @@ public class ReportExporter {
             } else {
                 for (int i = 0; i < lateTasks.size(); i++) {
                     Task t = lateTasks.get(i);
-                    writer.write("  " + (i + 1) + ". " + t.getTitle() + " (Divisi " + t.getDivisionName() + ") - PIC: " + t.getPicText() + " - Deadline: " + TextUtil.formatDate(t.getDeadline()));
+                    writer.write("  " + (i + 1) + ". " + t.getTitle() + " (Divisi " + t.getDivisionName() + ")"
+                            + " - PIC: " + t.getPicText()
+                            + " - Deadline: " + TextUtil.formatDate(t.getDeadline()));
                     writer.newLine();
                 }
             }
@@ -90,18 +101,17 @@ public class ReportExporter {
                     if (!m.getDecision().isEmpty()) {
                         summary += " | Keputusan: " + m.getDecision();
                     }
-                    writer.write("  " + TextUtil.formatDate(m.getDate()) + " (" + m.getDivisionName() + "): " + summary);
+                    writer.write("  " + TextUtil.formatDate(m.getDate())
+                            + " (" + m.getDivisionName() + "): " + summary);
                     writer.newLine();
                 }
             }
-        } finally {
-            writer.close();
         }
     }
 
+    // Method mengekspor daftar tugas semua divisi ke file CSV (pemisah ";", setiap kolom diberi tanda kutip).
     public static synchronized void exportCsv(Event e, File f) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(f));
-        try {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(f))) {
             // Header
             writer.write("Divisi;Judul;PIC;Prioritas;Deadline;Status;QC;Catatan;Link");
             writer.newLine();
@@ -122,11 +132,10 @@ public class ReportExporter {
                     writer.newLine();
                 }
             }
-        } finally {
-            writer.close();
         }
     }
 
+    // Method membungkus teks dengan tanda kutip untuk kolom CSV (tanda kutip di dalam teks digandakan).
     private static String escapeCsv(String text) {
         if (text == null) {
             text = "";
