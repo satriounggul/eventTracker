@@ -39,28 +39,54 @@ public class ConsoleTest {
             System.out.println("   Progres Divisi Tertinggi: " + event.getHighestDivisionProgress() + "%");
             System.out.println("   Progres Divisi Terendah: " + event.getLowestDivisionProgress() + "%");
 
-            if (event.getDivisionCount() != 5) throw new RuntimeException("Divisi harusnya 5");
-            if (event.getMemberCount() != 14) throw new RuntimeException("Anggota harusnya 14");
-            if (event.getTotalTasks() != 12) throw new RuntimeException("Tugas harusnya 12");
-            if (event.getMeetingCount() != 2) throw new RuntimeException("Notulensi harusnya 2");
+            if (event.getDivisionCount() != 5) {
+                throw new RuntimeException("Divisi harusnya 5");
+            }
+            if (event.getMemberCount() != 14) {
+                throw new RuntimeException("Anggota harusnya 14");
+            }
+            if (event.getTotalTasks() != 12) {
+                throw new RuntimeException("Tugas harusnya 12");
+            }
+            if (event.getMeetingCount() != 2) {
+                throw new RuntimeException("Notulensi harusnya 2");
+            }
 
             // 2. Uji Hak Akses (Run-time Polymorphism & Upcasting)
             Member coordinator = event.getMember(0);
             Member divHead = event.getMember(4); // Farhan Kusuma (Acara)
             Member staff = event.getMember(9);   // Yoga Prasetyo (Acara)
 
-            if (!(coordinator instanceof Coordinator)) throw new RuntimeException("Koordinator salah class");
-            if (!(divHead instanceof DivisionHead)) throw new RuntimeException("Ketua Divisi salah class");
-            if (!(staff instanceof Staff)) throw new RuntimeException("Staff salah class");
+            if (!(coordinator instanceof Coordinator)) {
+                throw new RuntimeException("Koordinator salah class");
+            }
+            if (!(divHead instanceof DivisionHead)) {
+                throw new RuntimeException("Ketua Divisi salah class");
+            }
+            if (!(staff instanceof Staff)) {
+                throw new RuntimeException("Staff salah class");
+            }
 
-            if (!coordinator.canManageEvent()) throw new RuntimeException("Koordinator harus canManageEvent");
-            if (!coordinator.canEdit("Acara") || !coordinator.canEdit("Humas")) throw new RuntimeException("Koordinator harus canEdit semua");
+            if (!coordinator.canManageEvent()) {
+                throw new RuntimeException("Koordinator harus canManageEvent");
+            }
+            if (!coordinator.canEdit("Acara") || !coordinator.canEdit("Humas")) {
+                throw new RuntimeException("Koordinator harus canEdit semua");
+            }
 
-            if (divHead.canManageEvent()) throw new RuntimeException("Ketua Divisi tidak boleh canManageEvent");
-            if (!divHead.canEdit("Acara")) throw new RuntimeException("Ketua Divisi Acara harus canEdit Acara");
-            if (divHead.canEdit("Humas")) throw new RuntimeException("Ketua Divisi Acara tidak boleh canEdit Humas");
+            if (divHead.canManageEvent()) {
+                throw new RuntimeException("Ketua Divisi tidak boleh canManageEvent");
+            }
+            if (!divHead.canEdit("Acara")) {
+                throw new RuntimeException("Ketua Divisi Acara harus canEdit Acara");
+            }
+            if (divHead.canEdit("Humas")) {
+                throw new RuntimeException("Ketua Divisi Acara tidak boleh canEdit Humas");
+            }
 
-            if (staff.canManageEvent() || staff.canEdit("Acara")) throw new RuntimeException("Staff tidak boleh edit");
+            if (staff.canManageEvent() || staff.canEdit("Acara")) {
+                throw new RuntimeException("Staff tidak boleh edit");
+            }
             System.out.println("2. Pengujian Hak Akses (Polymorphism) BERHASIL.");
 
             // 3. Uji Simpan dan Muat File (.evt) - Java I/O
@@ -70,13 +96,27 @@ public class ConsoleTest {
 
             Event loadedEvent = FileManager.load(testEvt);
             System.out.println("   File .evt berhasil dimuat.");
-            if (!loadedEvent.getName().equals(event.getName())) throw new RuntimeException("Nama event tidak sama!");
-            if (loadedEvent.getDivisionCount() != event.getDivisionCount()) throw new RuntimeException("Jumlah divisi tidak sama!");
-            if (loadedEvent.getMemberCount() != event.getMemberCount()) throw new RuntimeException("Jumlah anggota tidak sama!");
-            if (loadedEvent.getTotalTasks() != event.getTotalTasks()) throw new RuntimeException("Jumlah tugas tidak sama!");
-            if (loadedEvent.getTotalDone() != event.getTotalDone()) throw new RuntimeException("Jumlah tugas selesai tidak sama!");
-            if (loadedEvent.getTotalLate() != event.getTotalLate()) throw new RuntimeException("Jumlah tugas terlambat tidak sama!");
-            if (loadedEvent.getMeetingCount() != event.getMeetingCount()) throw new RuntimeException("Jumlah notulensi tidak sama!");
+            if (!loadedEvent.getName().equals(event.getName())) {
+                throw new RuntimeException("Nama event tidak sama!");
+            }
+            if (loadedEvent.getDivisionCount() != event.getDivisionCount()) {
+                throw new RuntimeException("Jumlah divisi tidak sama!");
+            }
+            if (loadedEvent.getMemberCount() != event.getMemberCount()) {
+                throw new RuntimeException("Jumlah anggota tidak sama!");
+            }
+            if (loadedEvent.getTotalTasks() != event.getTotalTasks()) {
+                throw new RuntimeException("Jumlah tugas tidak sama!");
+            }
+            if (loadedEvent.getTotalDone() != event.getTotalDone()) {
+                throw new RuntimeException("Jumlah tugas selesai tidak sama!");
+            }
+            if (loadedEvent.getTotalLate() != event.getTotalLate()) {
+                throw new RuntimeException("Jumlah tugas terlambat tidak sama!");
+            }
+            if (loadedEvent.getMeetingCount() != event.getMeetingCount()) {
+                throw new RuntimeException("Jumlah notulensi tidak sama!");
+            }
             System.out.println("   Integritas data tersimpan dan termuat kembali 100% COCOK.");
 
             // 4. Uji Export Laporan TXT dan CSV dengan Multithreading (Runnable + join)
@@ -111,18 +151,26 @@ public class ConsoleTest {
             txtThread.join();
             csvThread.join();
 
-            if (!testTxt.exists() || testTxt.length() == 0) throw new RuntimeException("Export TXT gagal");
-            if (!testCsv.exists() || testCsv.length() == 0) throw new RuntimeException("Export CSV gagal");
+            if (!testTxt.exists() || testTxt.length() == 0) {
+                throw new RuntimeException("Export TXT gagal");
+            }
+            if (!testCsv.exists() || testCsv.length() == 0) {
+                throw new RuntimeException("Export CSV gagal");
+            }
             System.out.println("4. Export TXT (" + testTxt.length() + " bytes) & CSV (" + testCsv.length() + " bytes) via Thread BERHASIL.");
 
             // 5. Uji Collections (Map, Set, Overloading)
             Map<String, Integer> statusMap = event.getStatusSummary();
             System.out.println("5. Ringkasan Status (HashMap): " + statusMap);
-            if (event.getUpcomingTasks().size() > 5) throw new RuntimeException("Default upcoming tasks harus maksimal 5");
+            if (event.getUpcomingTasks().size() > 5) {
+                throw new RuntimeException("Default upcoming tasks harus maksimal 5");
+            }
 
             Task dupPicTask = new Task("Uji PIC Unik", "Acara", LocalDate.now().plusDays(2));
             dupPicTask.setPics(new String[] { "Budi", "Ani", "Budi" });
-            if (dupPicTask.getPics().size() != 2) throw new RuntimeException("Set PIC harus menghilangkan duplikat");
+            if (dupPicTask.getPics().size() != 2) {
+                throw new RuntimeException("Set PIC harus menghilangkan duplikat");
+            }
             System.out.println("   Set PIC unik & terurut: " + dupPicTask.getPicText());
 
             // 6. Uji Validasi & Exception
@@ -149,9 +197,15 @@ public class ConsoleTest {
             }
 
             // Bersihkan file uji coba
-            if (testEvt.exists()) testEvt.delete();
-            if (testTxt.exists()) testTxt.delete();
-            if (testCsv.exists()) testCsv.delete();
+            if (testEvt.exists()) {
+                testEvt.delete();
+            }
+            if (testTxt.exists()) {
+                testTxt.delete();
+            }
+            if (testCsv.exists()) {
+                testCsv.delete();
+            }
 
             System.out.println("\nSEMUA PENGUJIAN BERHASIL TANPA KESALAHAN!");
 
