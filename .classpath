@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+
+    <!-- Menentukan folder src sebagai lokasi source code Java. -->
+    <classpathentry kind="src" path="src"/>
+
+    <!-- Menggunakan JRE yang dikonfigurasi pada workspace IDE. -->
+    <classpathentry
+        kind="con"
+        path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+
+    <!-- Menentukan folder bin sebagai lokasi hasil kompilasi kode Java. -->
+    <classpathentry kind="output" path="bin"/>
+
+</classpath>
