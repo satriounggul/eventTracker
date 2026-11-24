@@ -6,21 +6,21 @@
             "name": "ConsoleTest",
             "request": "launch",
             "mainClass": "eventtracker.ConsoleTest",
-            "projectName": "eventTracker_e7076b92"
+            "projectName": "eventTracker-main"
         },
         {
             "type": "java",
             "name": "Main",
             "request": "launch",
             "mainClass": "eventtracker.Main",
-            "projectName": "eventTracker_e7076b92"
+            "projectName": "eventTracker-main"
         },
         {
             "type": "java",
             "name": "Event Progress Tracker (GUI)",
             "request": "launch",
             "mainClass": "eventtracker.Main",
-            "projectName": "EventProgressTracker",
+            "projectName": "eventTracker-main",
             "vmArgs": "-ea"
         },
         {
@@ -28,7 +28,7 @@
             "name": "Console Test (Tanpa GUI)",
             "request": "launch",
             "mainClass": "eventtracker.ConsoleTest",
-            "projectName": "EventProgressTracker",
+            "projectName": "eventTracker-main",
             "vmArgs": "-ea"
         }
     ]

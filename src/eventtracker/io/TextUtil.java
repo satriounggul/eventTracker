@@ -9,9 +9,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+// Kumpulan method bantuan teks: escape file, daftar PIC, nama file, dan format tanggal.
 public class TextUtil {
+
+    // Format tanggal yang dipakai di seluruh aplikasi (dd-MM-yyyy).
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+    // Method menyiapkan teks agar aman disimpan satu baris di file ("|" menjadi "/", baris baru menjadi "\n").
     public static String escape(String text) {
         if (text == null) {
             return "";
@@ -23,6 +27,7 @@ public class TextUtil {
         return s;
     }
 
+    // Method mengembalikan teks "\n" pada file menjadi baris baru.
     public static String unescape(String text) {
         if (text == null) {
             return "";
@@ -30,6 +35,7 @@ public class TextUtil {
         return text.replace("\\n", "\n");
     }
 
+    // Method menggabungkan daftar PIC dengan pemisah ";" (format penyimpanan di file).
     public static String joinPics(Set<String> pics) {
         if (pics == null || pics.isEmpty()) {
             return "";
@@ -46,6 +52,7 @@ public class TextUtil {
         return sb.toString();
     }
 
+    // Method menggabungkan daftar PIC dengan pemisah ", " (format tampilan pada form).
     public static String joinPicsWithComma(Set<String> pics) {
         if (pics == null || pics.isEmpty()) {
             return "";
@@ -62,6 +69,7 @@ public class TextUtil {
         return sb.toString();
     }
 
+    // Method memecah teks PIC menjadi Set yang unik dan terurut.
     public static Set<String> splitPicsToSet(String text) {
         Set<String> result = new TreeSet<>();
         List<String> list = splitPics(text);
@@ -71,6 +79,7 @@ public class TextUtil {
         return result;
     }
 
+    // Method memecah teks PIC menjadi List tanpa elemen kosong.
     public static List<String> splitPics(String text) {
         List<String> result = new ArrayList<>();
         if (text == null || text.trim().isEmpty()) {
@@ -110,6 +119,7 @@ public class TextUtil {
         return sb.toString();
     }
 
+    // Method mengubah teks dd-MM-yyyy menjadi LocalDate; teks kosong atau salah format menimbulkan InvalidDataException.
     public static LocalDate parseDate(String text) throws InvalidDataException {
         if (text == null || text.trim().isEmpty()) {
             throw new InvalidDataException("Tanggal tidak boleh kosong. Gunakan format dd-MM-yyyy (contoh: 25-12-2026).");
@@ -122,6 +132,7 @@ public class TextUtil {
         }
     }
 
+    // Method mengubah LocalDate menjadi teks dd-MM-yyyy (teks kosong jika null).
     public static String formatDate(LocalDate date) {
         if (date == null) {
             return "";
@@ -129,6 +140,7 @@ public class TextUtil {
         return date.format(DATE_FORMATTER);
     }
 
+    // Method menambahkan spasi di kanan teks sampai mencapai panjang tertentu.
     public static String padRight(String text, int length) {
         if (text == null) {
             text = "";

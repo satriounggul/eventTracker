@@ -13,8 +13,10 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashSet;
 
+// Berisi data contoh (dummy) event beserta divisi, anggota, tugas, dan notulensi rapat.
 public class SampleData {
 
+    // Method membuat satu event contoh lengkap; mengembalikan null jika data contoh gagal divalidasi.
     public static Event create() {
         try {
             LocalDate today = LocalDate.now();
