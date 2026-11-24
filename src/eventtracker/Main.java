@@ -1,9 +1,10 @@
 package eventtracker;
 
+import eventtracker.gui.MainFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import eventtracker.gui.MainFrame;
 
+// Titik masuk aplikasi GUI Event Progress Tracker.
 public class Main {
     public static void main(String[] args) {
         // Coba atur Look and Feel sistem
