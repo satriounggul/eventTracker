@@ -3,6 +3,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "ConsoleTest",
+            "request": "launch",
+            "mainClass": "eventtracker.ConsoleTest",
+            "projectName": "eventTracker_e7076b92"
+        },
+        {
+            "type": "java",
             "name": "Main",
             "request": "launch",
             "mainClass": "eventtracker.Main",

@@ -1,5 +1,6 @@
 package eventtracker.model;
 
+// Inisialisasi enum peran dan label untuk penulisan.
 public enum Position {
     KETUA("Ketua"),
     WAKIL("Wakil"),
@@ -10,10 +11,12 @@ public enum Position {
 
     private final String label;
 
+    // Constructor inisialisasi label untuk penulisan.
     Position(String label) {
         this.label = label;
     }
 
+    // Method getter mengambil label peran.
     public String getLabel() {
         return label;
     }
