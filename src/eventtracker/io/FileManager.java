@@ -19,11 +19,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
 
+// Pengelola penyimpanan dan pemuatan data event ke/dari file teks (.evt).
 public class FileManager {
 
+    // Method menyimpan seluruh data event ke file (satu baris per data, dipisahkan "|").
     public static synchronized void save(Event e, File f) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(f));
-        try {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(f))) {
             // EVENT|nama|tanggal
             writer.write("EVENT|" + TextUtil.escape(e.getName()) + "|" + TextUtil.formatDate(e.getDate()));
             writer.newLine();
@@ -73,20 +74,18 @@ public class FileManager {
                         + TextUtil.escape(m.getDecision()));
                 writer.newLine();
             }
-        } finally {
-            writer.close();
         }
     }
 
+    // Method memuat data event dari file; baris yang salah dilaporkan beserta nomor barisnya.
     public static synchronized Event load(File f) throws IOException, InvalidDataException {
         if (!f.exists()) {
             throw new FileNotFoundException("File tidak ditemukan: " + f.getName());
         }
 
-        BufferedReader reader = new BufferedReader(new FileReader(f));
         Event event = null;
         int lineNumber = 0;
-        try {
+        try (BufferedReader reader = new BufferedReader(new FileReader(f))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
@@ -198,8 +197,6 @@ public class FileManager {
                     throw new InvalidDataException("Baris " + lineNumber + ": " + ex.getMessage());
                 }
             }
-        } finally {
-            reader.close();
         }
 
         if (event == null) {
